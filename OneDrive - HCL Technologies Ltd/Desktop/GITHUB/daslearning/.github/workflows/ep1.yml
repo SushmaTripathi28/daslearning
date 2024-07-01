@@ -1,62 +1,65 @@
-name: "CICD EP1"
-on: 
- push:
-   brances:
-     - 'main'
-     - 'ep1'
-   paths:
-     - 'ep1/**'
+# This Pipeline will manage CloudRun deployment via Terraform
 
-concurrency: ${{github.repository}}
+name: 'CICD EP1'
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'ep1'
+    paths:
+      - 'ep1/**'
+
+concurrency: ${{ github.repository }}
+
 jobs:
   ep1_cicd:
-      name: 'CICD Job EP1'
-      runs-on: 'ubuntu-latest'
-      step:
-          - name: GIT Checkout
-            id: 'git-checkout'
-            uses: "actions/checkout@v4"
+    name: 'CICD Job EP1'
+    runs-on: 'ubuntu-latest'
 
-          - name: 'Terraform init'
-            id: 'tf-init'
-            env: 
-                GOOGLE_CREDENTIALS: ${{secrets.EP_KEY1}}
-            run:  |
-                cd ./ep1
-                terraform init
-                pwd
+    steps:
 
-          - name: 'Terraform Plan'
-            id: 'tf-plan'
-            env: 
-               GOOGLE_CREDENTIALS: ${{secrets.EP_KEY1}}
-            run: |
-                cd ./ep1
-                terraform plan
+      - name: GIT Checkout
+        id: 'git-checkout'
+        uses: "actions/checkout@v4"
 
-          - name: 'Terraform Apply'
-            id:  'tf-apply'
-            if: |
-               github.ref =='refs/heads/main'
+      - name: Terraform Init
+        id: 'tf-init'
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.EP_KEY1 }}
+        run: |
+          cd ./ep1
+          terraform init
+          pwd
 
-            env:
-              GOOGLE_CREDENTIALS: ${{ secrets.EP_KEY1}}
-            eun:  |
-              cd ./ep1
-              terraform apply --auto-approve
+      - name: Terraform Plan
+        id: 'tf-plan'
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.EP_KEY1 }}
+        run: |
+          cd ./ep1
+          terraform plan
 
-          - name: Upload File
-            id: 'python-upload'
-            if: |
-              github.ref == 'refs/heads/main'
-            env: 
-              GOOGLE_CREDENTIALS: ${{secrets.EP_KEY1}}
-              GOOGLE_APPLICATION_CREDENTIALS: ${{github.workspace}}/cred.json
-            run: |
-              cd ./ep1
-              echo -n '$GOOGLE_CREDENTIALS'  > $GOOGLE_APPLICATION_CREDENETIALS
-              pip install gcloud
-              python gcsUpload.py
-              rm $GOOGLE_APPLICATION_CREDENTIALS
-              
+      - name: Terraform Apply
+        id: 'tf-apply'
+        if: |
+          github.ref == 'refs/heads/main'
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.EP_KEY1 }}
+        run: |
+          cd ./ep1
+          terraform apply --auto-approve
 
+      - name: Upload File
+        id: 'python-upload'
+        if: |
+          github.ref == 'refs/heads/main'
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.EP_KEY1 }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/cred.json
+        run: |
+          cd ./ep1
+          echo -n "$GOOGLE_CREDENTIALS" > $GOOGLE_APPLICATION_CREDENTIALS
+          pip install gcloud
+          python gcsUpoad.py
+          rm $GOOGLE_APPLICATION_CREDENTIALS
